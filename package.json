@@ -1,6 +1,6 @@
 {
   "name": "ember-cli-deploy-corber",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "An ember-cli-deploy plugin to build the project using corber.",
   "keywords": [
     "corber",
@@ -19,10 +19,11 @@
     "test": "node tests/runner.js && ./node_modules/.bin/eslint index.js tests/**/*-test.js"
   },
   "dependencies": {
-    "corber": "^1.1.12",
+    "corber": "^1.4.0",
     "ember-cli-deploy-plugin": "^0.2.9",
     "ember-cli-string-utils": "^1.1.0",
-    "fs-extra": "^5.0.0"
+    "fs-extra": "^5.0.0",
+    "glob": "^7.1.5"
   },
   "devDependencies": {
     "chai": "^4.1.2",

@@ -3,13 +3,37 @@
 
 const BasePlugin = require('ember-cli-deploy-plugin');
 const Build = require('corber/lib/commands/build');
+const glob = require("glob");
 const getCordovaPath = require('corber/lib/targets/cordova/utils/get-path');
 const { Promise } = require('rsvp');
 const { dasherize } = require('ember-cli-string-utils');
 const { copySync, readdirSync, remove } = require('fs-extra');
-
+const path = require("path");
 // path to cordova android build output folder relative to `corber/corodva` project folder
-const ANDROID_BUILD_OUTPUT_PATH = '/platforms/android/build/outputs/apk/';
+const ANDROID_APP_PATH = '/platforms/android/app/';
+const ANDROID_BUILD_OUTPUT_PATH = path.join(ANDROID_APP_PATH,'/build/outputs/apk/');
+function arr_diff (a1, a2) {
+
+    var a = [], diff = [];
+
+    for (var i = 0; i < a1.length; i++) {
+        a[a1[i]] = true;
+    }
+
+    for (var i = 0; i < a2.length; i++) {
+        if (a[a2[i]]) {
+            delete a[a2[i]];
+        } else {
+            a[a2[i]] = true;
+        }
+    }
+
+    for (var k in a) {
+        diff.push(k);
+    }
+
+    return diff;
+}
 
 module.exports = {
   name: 'ember-cli-deploy-corber',
@@ -19,7 +43,8 @@ module.exports = {
       name: options.name,
 
       defaultConfig: {
-        enabled: true
+        enabled: true,
+        skipFrameworkBuild: true
       },
 
       setup: function(context) {
@@ -45,13 +70,13 @@ module.exports = {
           });
         });
       },
-
       didBuild: function(context) {
         if (!this.readConfig('enabled')) {
           return;
         }
 
         return new Promise((resolve, reject) => {
+          let cordovaAndroidWwwSrc = path.join(getCordovaPath(context.project),ANDROID_APP_PATH, "src/main/assets/www/");
           let cordovaOutputPath = getCordovaPath(context.project).concat('/www');
           let buildArgs = this.getBuildArgs();
           let buildOutputPath = this.getBuildOutputPath(context);
@@ -102,6 +127,11 @@ module.exports = {
               additionalContext.corber[platform] = buildArtifacts;
             }
 
+            // Copies new files back to dist for other plugins.
+            copySync(cordovaAndroidWwwSrc,context.distDir);
+            let newFiles = [].concat(glob.sync('**/*', { cwd: context.distDir, nodir: true, dot: true}));
+            newFiles = arr_diff(context.distFiles, newFiles);
+            additionalContext.distFiles = newFiles;
             resolve(additionalContext);
           }).catch(reject);
         });
@@ -123,8 +153,6 @@ module.exports = {
 
           return `${arg}=${value}`;
         });
-
-        args.push('--skip-framework-build');
         args.push('--add-cordova-js');
         args.push('--quiet');
 
@@ -132,13 +160,14 @@ module.exports = {
       },
 
       getBuildOutputPath: function(context) {
-        let platform = this.readConfig('platform');
-        let projectPath = context.project;
+        const isRelease = this.readConfig('release');
+        const platform = this.readConfig('platform');
+        const projectPath = context.project;
         let cordovaPath = getCordovaPath(projectPath);
-
+        let buildPath = path.join(ANDROID_BUILD_OUTPUT_PATH,(isRelease ? 'release/' : 'debug/'));
         switch (platform) {
           case 'android':
-            return cordovaPath.concat(ANDROID_BUILD_OUTPUT_PATH);
+            return path.join(cordovaPath,buildPath);
 
           default:
             this.log('Adding build artifacts to ember-cli-build context is ' +
