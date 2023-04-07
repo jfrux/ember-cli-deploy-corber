@@ -11,7 +11,7 @@ const { copySync, readdirSync, remove } = require('fs-extra');
 const path = require("path");
 // path to cordova android build output folder relative to `corber/corodva` project folder
 const ANDROID_APP_PATH = '/platforms/android/app/';
-const ANDROID_BUILD_OUTPUT_PATH = path.join(ANDROID_APP_PATH,'/build/outputs/apk/');
+const ANDROID_BUILD_OUTPUT_PATH = path.join(ANDROID_APP_PATH,'/build/outputs/bundle/');
 function arr_diff (a1, a2) {
 
     var a = [], diff = [];
